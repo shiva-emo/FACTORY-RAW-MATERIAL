@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory Raw Material Management Tool - Complete</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    primary: {
+                        50: 'var(--color-primary-50)',
+                        100: 'var(--color-primary-100)',
+                        200: 'var(--color-primary-200)',
+                        300: 'var(--color-primary-300)',
+                        400: 'var(--color-primary-400)',
+                        500: 'var(--color-primary-500)',
+                        600: 'var(--color-primary-600)',
+                        700: 'var(--color-primary-700)',
+                        800: 'var(--color-primary-800)',
+                        900: 'var(--color-primary-900)',
+                    }
+                }
+            }
+        }
+    }
+</script>
+<style>
+    :root {
+        /* Light Theme Colors */
+        --color-primary-50: #eef2ff;
+        --color-primary-100: #e0e7ff;
+        --color-primary-200: #c7d2fe;
+        --color-primary-300: #a5b4fc;
+        --color-primary-400: #818cf8;
+        --color-primary-500: #6366f1;
+        --color-primary-600: #4f46e5;
+        --color-primary-700: #4338ca;
+        --color-primary-800: #3730a3;
+        --color-primary-900: #312e81;
+        
+        --bg-gradient-from: #f0f4ff;
+        --bg-gradient-via: #e0e7ff;
+        --bg-gradient-to: #f5f3ff;
+        
+        --color-text-primary: #1f2937;
+        --color-text-secondary: #4b5563;
+        --color-text-tertiary: #6b7280;
+        
+        --color-bg-primary: #ffffff;
+        --color-bg-secondary: #f9fafb;
+        --color-bg-tertiary: #f3f4f6;
+        
+        --color-border: #e5e7eb;
+        --color-input-border: #d1d5db;
+        
+        --shadow-color: rgba(0, 0, 0, 0.1);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .dark {
+        /* Dark Theme Colors */
+        --color-primary-50: #eef2ff;
+        --color-primary-100: #e0e7ff;
+        --color-primary-200: #c7d2fe;
+        --color-primary-300: #a5b4fc;
+        --color-primary-400: #818cf8;
+        --color-primary-500: #6366f1;
+        --color-primary-600: #4f46e5;
+        --color-primary-700: #4338ca;
+        --color-primary-800: #3730a3;
+        --color-primary-900: #312e81;
+        
+        --bg-gradient-from: #111827;
+        --bg-gradient-via: #1f2937;
+        --bg-gradient-to: #1e1b4b;
+        
+        --color-text-primary: #f9fafb;
+        --color-text-secondary: #e5e7eb;
+        --color-text-tertiary: #d1d5db;
+        
+        --color-bg-primary: #1f2937;
+        --color-bg-secondary: #111827;
+        --color-bg-tertiary: #374151;
+        
+        --color-border: #374151;
+        --color-input-border: #4b5563;
+        
+        --shadow-color: rgba(0, 0, 0, 0.3);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    body {
+        color: var(--color-text-primary);
+        background: linear-gradient(135deg, var(--bg-gradient-from), var(--bg-gradient-via), var(--bg-gradient-to));
+    }
+    
+    .bg-card {
+        background-color: var(--color-bg-primary);
+        border-color: var(--color-border);
+        box-shadow: var(--card-shadow);
+    }
+    
+    .bg-secondary {
+        background-color: var(--color-bg-secondary);
+    }
+    
+    .bg-tertiary {
+        background-color: var(--color-bg-tertiary);
+    }
+    
+    .border-color {
+        border-color: var(--color-border);
+    }
+    
+    .text-primary {
+        color: var(--color-text-primary);
+    }
+    
+    .text-secondary {
+        color: var(--color-text-secondary);
+    }
+    
+    .text-tertiary {
+        color: var(--color-text-tertiary);
+    }
+    
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .card-hover:hover { transform: translateY(-4px); transition: all 0.3s ease; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tab-button.active { 
+        background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+        color: white;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    .gradient-bg { background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%); }
+    .theme-toggle {
+        transition: transform 0.5s ease;
+    }
+    .theme-toggle:hover {
+        transform: rotate(45deg);
+    }
+    
+    .sync-status {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .sync-online {
+        background: #10b981;
+        color: white;
+    }
+    
+    .sync-offline {
+        background: #ef4444;
+        color: white;
+    }
+    
+    .sync-syncing {
+        background: #f59e0b;
+        color: white;
+    }
+    
+    .loading { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--color-bg-tertiary); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: var(--color-primary-400); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--color-primary-500); }
+    
+    input, select, textarea {
+        background-color: var(--color-bg-primary);
+        border-color: var(--color-input-border);
+        color: var(--color-text-primary);
+    }
+    
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--color-primary-500);
+        outline: none;
+        box-shadow: 0 0 0 2px var(--color-primary-200);
+    }
+    
+    table {
+        border-color: var(--color-border);
+    }
+    
+    table thead {
+        background-color: var(--color-bg-tertiary);
+    }
+    
+    table tbody tr:hover {
+        background-color: var(--color-bg-secondary);
+    }
+</style>
+</head>
+<body class="min-h-screen">
+<!-- Header -->
+<header class="gradient-bg text-white shadow-2xl">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="bg-white bg-opacity-20 p-3 rounded-lg">
+                    <i class="fas fa-industry text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">Factory Raw Material Manager</h1>
+                    <p class="text-blue-100">Complete inventory and analytics solution with cloud storage</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-6">
+                <!-- Sync Status -->
+                <div id="sync-status" class="sync-status sync-offline">
+                    <i id="sync-icon" class="fas fa-cloud-upload-alt"></i>
+                    <span id="sync-text">Offline</span>
+                </div>
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" class="theme-toggle bg-white bg-opacity-20 p-3 rounded-full hover:bg-opacity-30 transition-all">
+                    <i id="theme-icon" class="fas fa-sun text-xl"></i>
+                </button>
+                <div class="text-right">
+                    <p class="text-sm text-blue-100">Total Parties</p>
+                    <p id="total-parties" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-blue-100">Total Value</p>
+                    <p id="total-value" class="text-2xl font-bold">₹0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Firebase Configuration Modal -->
+    <div id="config-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-card rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <h2 class="text-2xl font-bold text-primary mb-6">Firebase Configuration</h2>
+            <p class="text-secondary mb-4">To enable cloud storage, please add your Firebase configuration:</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-secondary mb-2">API Key</label>
+                    <input type="text" id="firebase-api-key" placeholder="Enter Firebase API Key" class="w-full px-4 py-3 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-secondary mb-2">Project ID</label>
+                    <input type="text" id="firebase-project-id" placeholder="Enter Firebase Project ID" class="w-full px-4 py-3 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-secondary mb-2">Database ID (Optional)</label>
+                    <input type="text" id="firebase-database-id" placeholder="Enter Database ID or leave empty for default" class="w-full px-4 py-3 border rounded-lg">
+                </div>
+            </div>
+            
+            <div class="flex gap-4 mt-6">
+                <button onclick="saveFirebaseConfig()" class="flex-1 gradient-bg text-white py-3 rounded-lg font-medium">
+                    Save & Connect
+                </button>
+                <button onclick="closeConfigModal()" class="flex-1 bg-gray-500 text-white py-3 rounded-lg font-medium">
+                    Use Offline
+                </button>
+            </div>
+            
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-700">
+                    <strong>Setup Instructions:</strong><br>
+                    1. Go to <a href="https://console.firebase.google.com" target="_blank" class="underline">Firebase Console</a><br>
+                    2. Create a new project<br>
+                    3. Enable Firestore Database<br>
+                    4. Get your project credentials from Project Settings
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-card rounded-xl shadow-lg mb-8 overflow-hidden">
+        <div class="flex flex-wrap border-b border-color">
+            <button onclick="switchTab('add-entry')" class="tab-button px-6 py-4 font-medium transition-all active">
+                <i class="fas fa-plus mr-2"></i>Add Entry
+            </button>
+            <button onclick="switchTab('party-management')" class="tab-button px-6 py-4 font-medium transition-all">
+                <i class="fas fa-users mr-2"></i>Party Management
+            </button>
+            <button onclick="switchTab('view-entries')" class="tab-button px-6 py-4 font-medium transition-all">
+                <i class="fas fa-list mr-2"></i>View Entries
+            </button>
+            <button onclick="switchTab('analytics')" class="tab-button px-6 py-4 font-medium transition-all">
+                <i class="fas fa-chart-bar mr-2"></i>Analytics
+            </button>
+            <button onclick="switchTab('party-wise')" class="tab-button px-6 py-4 font-medium transition-all">
+                <i class="fas fa-eye mr-2"></i>Party Wise View
+            </button>
+            <button onclick="switchTab('settings')" class="tab-button px-6 py-4 font-medium transition-all">
+                <i class="fas fa-cog mr-2"></i>Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Entry Tab -->
+    <div id="add-entry" class="tab-content active fade-in">
+        <div class="grid lg:grid-cols-2 gap-8">
+            <!-- Entry Form -->
+            <div class="bg-card rounded-xl shadow-lg p-8 card-hover">
+                <h2 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                    <i class="fas fa-plus-circle text-primary-500 mr-3"></i>
+                    Add New Entry
+                </h2>
+                
+                <form id="entry-form" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-secondary mb-2">
+                                <i class="fas fa-calendar mr-2"></i>Date
+                            </label>
+                            <input type="date" id="entry-date" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary mb-2">
+                                <i class="fas fa-user-tie mr-2"></i>Party Name
+                            </label>
+                            <select id="party-select" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                                <option value="">Select Party</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-secondary mb-2">
+                            <i class="fas fa-box mr-2"></i>Item Name
+                        </label>
+                        <input type="text" id="item-name" placeholder="Enter item name" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                    </div>
+
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-secondary mb-2">
+                                <i class="fas fa-weight mr-2"></i>Quantity
+                            </label>
+                            <input type="number" id="quantity" placeholder="0" min="0" step="0.01" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary mb-2">
+                                <i class="fas fa-balance-scale mr-2"></i>Unit
+                            </label>
+                            <select id="unit" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                <option value="kg">Kg</option>
+                                <option value="ton">Ton</option>
+                                <option value="liter">Liter</option>
+                                <option value="piece">Piece</option>
+                                <option value="meter">Meter</option>
+                                <option value="box">Box</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary mb-2">
+                                <i class="fas fa-rupee-sign mr-2"></i>Rate per Unit
+                            </label>
+                            <input type="number" id="rate" placeholder="0.00" min="0" step="0.01" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-secondary mb-2">
+                            <i class="fas fa-sticky-note mr-2"></i>Notes (Optional)
+                        </label>
+                        <textarea id="notes" placeholder="Additional notes..." rows="3" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"></textarea>
+                    </div>
+
+                    <div class="bg-tertiary rounded-lg p-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-medium text-secondary">Total Amount:</span>
+                            <span id="total-amount" class="text-2xl font-bold text-green-600">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full gradient-bg text-white py-4 rounded-lg font-medium text-lg hover:shadow-lg transform hover:scale-105 transition-all">
+                        <i class="fas fa-save mr-2"></i>Save Entry
+                    </button>
+                </form>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="space-y-6">
+                <div class="bg-card rounded-xl shadow-lg p-6 card-hover">
+                    <h3 class="text-xl font-bold text-primary mb-4">
+                        <i class="fas fa-chart-line text-green-600 mr-2"></i>Today's Summary
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center p-4 bg-tertiary rounded-lg">
+                            <p class="text-sm text-primary-600">Entries</p>
+                            <p id="today-entries" class="text-2xl font-bold text-primary-800">0</p>
+                        </div>
+                        <div class="text-center p-4 bg-tertiary rounded-lg">
+                            <p class="text-sm text-green-600">Value</p>
+                            <p id="today-value" class="text-2xl font-bold text-green-800">₹0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-xl shadow-lg p-6 card-hover">
+                    <h3 class="text-xl font-bold text-primary mb-4">
+                        <i class="fas fa-clock text-orange-600 mr-2"></i>Recent Entries
+                    </h3>
+                    <div id="recent-entries" class="space-y-3 max-h-64 overflow-y-auto">
+                        <!-- Recent entries will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Party Management Tab -->
+    <div id="party-management" class="tab-content">
+        <div class="grid lg:grid-cols-2 gap-8">
+            <!-- Add Party Form -->
+            <div class="bg-card rounded-xl shadow-lg p-8 card-hover">
+                <h2 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                    <i class="fas fa-user-plus text-primary-600 mr-3"></i>
+                    Add New Party
+                </h2>
+                
+                <form id="party-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-secondary mb-2">
+                            <i class="fas fa-building mr-2"></i>Party Name
+                        </label>
+                        <input type="text" id="party-name" placeholder="Enter party name" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" required>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-secondary mb-2">
+                                <i class="fas fa-phone mr-2"></i>Contact Number
+                            </label>
+                            <input type="tel" id="party-contact" placeholder="Enter contact number" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-secondary mb-2">
+                                <i class="fas fa-envelope mr-2"></i>Email
+                            </label>
+                            <input type="email" id="party-email" placeholder="Enter email" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-secondary mb-2">
+                            <i class="fas fa-map-marker-alt mr-2"></i>Address
+                        </label>
+                        <textarea id="party-address" placeholder="Enter address" rows="3" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full gradient-bg text-white py-4 rounded-lg font-medium text-lg hover:shadow-lg transform hover:scale-105 transition-all">
+                        <i class="fas fa-user-plus mr-2"></i>Add Party
+                    </button>
+                </form>
+            </div>
+
+            <!-- Parties List -->
+            <div class="bg-card rounded-xl shadow-lg p-8 card-hover">
+                <h2 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                    <i class="fas fa-users text-green-600 mr-3"></i>
+                    Parties List
+                </h2>
+                
+                <div class="mb-4">
+                    <input type="text" id="party-search" placeholder="Search parties..." class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                </div>
+
+                <div id="parties-list" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Parties will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Entries Tab -->
+    <div id="view-entries" class="tab-content">
+        <div class="bg-card rounded-xl shadow-lg p-8">
+            <div class="flex flex-wrap items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-primary flex items-center">
+                    <i class="fas fa-list text-primary-600 mr-3"></i>
+                    All Entries
+                </h2>
+                
+                <div class="flex flex-wrap gap-4">
+                    <input type="text" id="entries-search" placeholder="Search entries..." class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <select id="entries-filter" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        <option value="">All Parties</option>
+                    </select>
+                    <button onclick="exportData()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-medium">Date</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium">Party</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium">Item</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium">Quantity</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium">Rate</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium">Amount</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="entries-table" class="divide-y divide-color">
+                        <!-- Entries will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="entries-pagination" class="mt-6 flex justify-center">
+                <!-- Pagination will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div id="analytics" class="tab-content">
+        <div class="space-y-8">
+            <!-- Analytics Controls -->
+            <div class="bg-card rounded-xl shadow-lg p-6">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-secondary mb-1">From Date</label>
+                        <input type="date" id="analytics-from" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-secondary mb-1">To Date</label>
+                        <input type="date" id="analytics-to" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-secondary mb-1">Party</label>
+                        <select id="analytics-party" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            <option value="">All Parties</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="updateAnalytics()" class="px-6 py-2 gradient-bg text-white rounded-lg hover:shadow-lg transition-all">
+                            <i class="fas fa-sync mr-2"></i>Update
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Cards -->
+            <div class="grid md:grid-cols-4 gap-6">
+                <div class="bg-card rounded-xl shadow-lg p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="bg-primary-100 p-3 rounded-lg mr-4">
+                            <i class="fas fa-shopping-cart text-2xl text-primary-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-secondary">Total Entries</p>
+                            <p id="analytics-total-entries" class="text-2xl font-bold text-primary">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-xl shadow-lg p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="bg-green-100 p-3 rounded-lg mr-4">
+                            <i class="fas fa-rupee-sign text-2xl text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-secondary">Total Value</p>
+                            <p id="analytics-total-value" class="text-2xl font-bold text-primary">₹0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-xl shadow-lg p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="bg-purple-100 p-3 rounded-lg mr-4">
+                            <i class="fas fa-users text-2xl text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-secondary">Active Parties</p>
+                            <p id="analytics-active-parties" class="text-2xl font-bold text-primary">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-xl shadow-lg p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="bg-orange-100 p-3 rounded-lg mr-4">
+                            <i class="fas fa-chart-line text-2xl text-orange-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-secondary">Avg. Order Value</p>
+                            <p id="analytics-avg-value" class="text-2xl font-bold text-primary">₹0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-primary mb-4">Monthly Trends</h3>
+                    <canvas id="monthly-chart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="bg-card rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-primary mb-4">Party-wise Distribution</h3>
+                    <canvas id="party-chart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-card rounded-xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-primary mb-4">Top Items</h3>
+                <canvas id="items-chart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Party Wise View Tab -->
+    <div id="party-wise" class="tab-content">
+        <div class="bg-card rounded-xl shadow-lg p-8">
+            <div class="flex flex-wrap items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-primary flex items-center">
+                    <i class="fas fa-eye text-primary-600 mr-3"></i>
+                    Party-wise View
+                </h2>
+                
+                <select id="party-wise-select" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <option value="">Select Party</option>
+                </select>
+            </div>
+
+            <div id="party-wise-content" class="hidden">
+                <!-- Party Details Card -->
+                <div class="grid lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-2">Total Orders</h3>
+                        <p id="party-total-orders" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-2">Total Amount</h3>
+                        <p id="party-total-amount" class="text-3xl font-bold">₹0</p>
+                    </div>
+                    <div class="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-2">Last Order</h3>
+                        <p id="party-last-order" class="text-lg font-semibold">-</p>
+                    </div>
+                </div>
+
+                <!-- Party Entries Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium">Date</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium">Item</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium">Quantity</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium">Rate</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium">Amount</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="party-wise-table" class="divide-y divide-color">
+                            <!-- Party entries will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="party-wise-empty" class="text-center py-12">
+                <i class="fas fa-users text-6xl text-tertiary mb-4"></i>
+                <p class="text-xl text-secondary">Select a party to view details</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="settings" class="tab-content">
+        <div class="grid lg:grid-cols-2 gap-8">
+            <!-- Cloud Storage Settings -->
+            <div class="bg-card rounded-xl shadow-lg p-8 card-hover">
+                <h2 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                    <i class="fas fa-cloud text-primary-600 mr-3"></i>
+                    Cloud Storage Settings
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-4 bg-tertiary rounded-lg">
+                        <div>
+                            <p class="font-medium text-primary">Firebase Status</p>
+                            <p id="firebase-status" class="text-sm text-secondary">Not configured</p>
+                        </div>
+                        <div id="firebase-indicator" class="w-3 h-3 rounded-full bg-red-500"></div>
+                    </div>
+                    
+                    <button onclick="showConfigModal()" class="w-full px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                        <i class="fas fa-cog mr-2"></i>Configure Firebase
+                    </button>
+                    
+                    <button onclick="syncData()" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" disabled id="sync-button">
+                        <i class="fas fa-sync mr-2"></i>Sync Data Now
+                    </button>
+                    
+                    <button onclick="exportAllData()" class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-download mr-2"></i>Export All Data
+                    </button>
+                    
+                    <button onclick="importData()" class="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>Import Data
+                    </button>
+                    
+                    <input type="file" id="import-file" accept=".json" class="hidden">
+                    
+                    <button onclick="clearAllData()" class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        <i class="fas fa-trash mr-2"></i>Clear All Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="bg-card rounded-xl shadow-lg p-8 card-hover">
+                <h2 class="text-2xl font-bold text-primary mb-6 flex items-center">
+                    <i class="fas fa-info-circle text-green-600 mr-3"></i>
+                    System Information
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between">
+                        <span class="text-secondary">Total Entries:</span>
+                        <span id="system-total-entries" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-secondary">Total Parties:</span>
+                        <span id="system-total-parties" class="font-semibold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-secondary">Data Storage:</span>
+                        <span id="storage-type" class="font-semibold">Local + Cloud</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-secondary">Last Sync:</span>
+                        <span id="last-sync" class="font-semibold">Never</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-secondary">Current Theme:</span>
+                        <span id="current-theme" class="font-semibold">Light</span>
+                    </div>
+                </div>
+
+                <!-- Theme Settings -->
+                <div class="mt-6 p-4 bg-tertiary rounded-lg">
+                    <h4 class="font-semibold text-primary mb-4">Theme Settings</h4>
+                    <div class="flex items-center justify-between">
+                        <span class="text-secondary">Dark Mode</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="theme-switch" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-tertiary rounded-lg">
+                    <h4 class="font-semibold text-primary mb-2">Data Storage Info</h4>
+                    <p class="text-sm text-secondary">
+                        All data is stored locally in your browser and can be synced to Firebase cloud storage. Make sure to export your data regularly for backup.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+<div id="message-container" class="fixed top-4 right-4 z-50"></div>
+
+<script>
+    // Global variables
+    let entries = [];
+    let parties = [];
+    let currentPage = 1;
+    const entriesPerPage = 10;
+    let currentTheme = localStorage.getItem('theme') || 'light';
+    let db = null;
+    let firebaseConfigured = false;
+
+    // Firebase configuration
+    const firebaseConfig = JSON.parse(localStorage.getItem('firebaseConfig') || '{}');
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date as default
+        document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('analytics-from').value = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+        document.getElementById('analytics-to').value = new Date().toISOString().split('T')[0];
+        
+        // Initialize theme
+        setTheme(currentTheme);
+        document.getElementById('theme-switch').checked = currentTheme === 'dark';
+        document.getElementById('current-theme').textContent = currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
+        
+        // Theme toggle event listeners
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+        document.getElementById('theme-switch').addEventListener('change', function() {
+            setTheme(this.checked ? 'dark' : 'light');
+        });
+        
+        // Auto-calculate total amount
+        document.getElementById('quantity').addEventListener('input', calculateTotal);
+        document.getElementById('rate').addEventListener('input', calculateTotal);
+        
+        // Search functionality
+        document.getElementById('party-search').addEventListener('input', filterParties);
+        document.getElementById('entries-search').addEventListener('input', filterEntries);
+        document.getElementById('entries-filter').addEventListener('change', filterEntries);
+        
+        // Party-wise view
+        document.getElementById('party-wise-select').addEventListener('change', loadPartyWiseView);
+        
+        // Initialize Firebase if configured
+        if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+            initializeFirebase();
+        } else {
+            showConfigModal();
+        }
+        
+        // Load local data first
+        loadLocalData();
+        loadParties();
+        updateDashboard();
+        updateRecentEntries();
+        updateTodayStats();
+        loadEntriesTable();
+        updateAnalytics();
+        updateSystemInfo();
+    });
+
+    // Firebase functions
+    function initializeFirebase() {
+        try {
+            const config = {
+                apiKey: firebaseConfig.apiKey,
+                authDomain: `${firebaseConfig.projectId}.firebaseapp.com`,
+                projectId: firebaseConfig.projectId
+            };
+
+            if (firebaseConfig.databaseId) {
+                config.databaseId = firebaseConfig.databaseId;
+            }
+
+            firebase.initializeApp(config);
+            db = firebase.firestore();
+            firebaseConfigured = true;
+            
+            updateSyncStatus('online', 'Connected');
+            updateFirebaseStatus('Connected', true);
+            document.getElementById('sync-button').disabled = false;
+            
+            // Load data from Firebase
+            loadFromFirebase();
+            
+            showMessage('Firebase connected successfully!', 'success');
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            updateSyncStatus('offline', 'Connection failed');
+            updateFirebaseStatus('Connection failed', false);
+            showMessage('Firebase connection failed: ' + error.message, 'error');
+        }
+    }
+
+    function showConfigModal() {
+        document.getElementById('config-modal').style.display = 'flex';
+        
+        // Pre-fill if config exists
+        if (firebaseConfig.apiKey) {
+            document.getElementById('firebase-api-key').value = firebaseConfig.apiKey;
+            document.getElementById('firebase-project-id').value = firebaseConfig.projectId;
+            document.getElementById('firebase-database-id').value = firebaseConfig.databaseId || '';
+        }
+    }
+
+    function closeConfigModal() {
+        document.getElementById('config-modal').style.display = 'none';
+        updateSyncStatus('offline', 'Offline mode');
+        updateFirebaseStatus('Not configured', false);
+    }
+
+    function saveFirebaseConfig() {
+        const apiKey = document.getElementById('firebase-api-key').value.trim();
+        const projectId = document.getElementById('firebase-project-id').value.trim();
+        const databaseId = document.getElementById('firebase-database-id').value.trim();
+
+        if (!apiKey || !projectId) {
+            showMessage('Please fill in required fields', 'error');
+            return;
+        }
+
+        const config = {
+            apiKey: apiKey,
+            projectId: projectId
+        };
+
+        if (databaseId) {
+            config.databaseId = databaseId;
+        }
+
+        localStorage.setItem('firebaseConfig', JSON.stringify(config));
+        Object.assign(firebaseConfig, config);
+        
+        closeConfigModal();
+        initializeFirebase();
+    }
+
+    function updateSyncStatus(status, text) {
+        const statusEl = document.getElementById('sync-status');
+        const iconEl = document.getElementById('sync-icon');
+        const textEl = document.getElementById('sync-text');
+        
+        statusEl.className = `sync-status sync-${status}`;
+        textEl.textContent = text;
+        
+        switch(status) {
+            case 'online':
+                iconEl.className = 'fas fa-cloud';
+                break;
+            case 'syncing':
+                iconEl.className = 'fas fa-sync loading';
+                break;
+            case 'offline':
+                iconEl.className = 'fas fa-cloud-upload-alt';
+                break;
+        }
+    }
+
+    function updateFirebaseStatus(status, connected) {
+        document.getElementById('firebase-status').textContent = status;
+        document.getElementById('firebase-indicator').className = 
+            `w-3 h-3 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`;
+    }
+
+    // Data loading functions
+    function loadLocalData() {
+        entries = JSON.parse(localStorage.getItem('rawMaterialEntries')) || [];
+        parties = JSON.parse(localStorage.getItem('rawMaterialParties')) || [];
+    }
+
+    async function loadFromFirebase() {
+        if (!firebaseConfigured) return;
+        
+        try {
+            updateSyncStatus('syncing', 'Syncing...');
+            
+            // Load parties
+            const partiesSnapshot = await db.collection('parties').get();
+            const firebaseParties = [];
+            partiesSnapshot.forEach(doc => {
+                firebaseParties.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Load entries
+            const entriesSnapshot = await db.collection('entries').get();
+            const firebaseEntries = [];
+            entriesSnapshot.forEach(doc => {
+                firebaseEntries.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Merge with local data (Firebase data takes precedence)
+            parties = mergeData(parties, firebaseParties);
+            entries = mergeData(entries, firebaseEntries);
+
+            // Update local storage
+            localStorage.setItem('rawMaterialParties', JSON.stringify(parties));
+            localStorage.setItem('rawMaterialEntries', JSON.stringify(entries));
+            localStorage.setItem('lastSync', new Date().toISOString());
+
+            updateSyncStatus('online', 'Synced');
+            loadParties();
+            updateDashboard();
+            updateRecentEntries();
+            updateTodayStats();
+            loadEntriesTable();
+            updateSystemInfo();
+            
+        } catch (error) {
+            console.error('Error loading from Firebase:', error);
+            updateSyncStatus('offline', 'Sync failed');
+            showMessage('Sync failed: ' + error.message, 'error');
+        }
+    }
+
+    function mergeData(localData, firebaseData) {
+        const merged = [...firebaseData];
+        
+        // Add local items that don't exist in Firebase
+        localData.forEach(localItem => {
+            if (!firebaseData.find(fbItem => fbItem.id === localItem.id)) {
+                merged.push(localItem);
+            }
+        });
+        
+        return merged;
+    }
+
+    async function saveToFirebase(collection, data) {
+        if (!firebaseConfigured) return false;
+        
+        try {
+            await db.collection(collection).doc(data.id.toString()).set(data);
+            return true;
+        } catch (error) {
+            console.error(`Error saving to Firebase (${collection}):`, error);
+            return false;
+        }
+    }
+
+    async function syncData() {
+        if (!firebaseConfigured) {
+            showMessage('Firebase not configured', 'error');
+            return;
+        }
+
+        try {
+            updateSyncStatus('syncing', 'Syncing...');
+            
+            // Upload all local data to Firebase
+            const uploadPromises = [];
+            
+            parties.forEach(party => {
+                uploadPromises.push(saveToFirebase('parties', party));
+            });
+            
+            entries.forEach(entry => {
+                uploadPromises.push(saveToFirebase('entries', entry));
+            });
+            
+            await Promise.all(uploadPromises);
+            
+            localStorage.setItem('lastSync', new Date().toISOString());
+            updateSyncStatus('online', 'Synced');
+            updateSystemInfo();
+            
+            showMessage('Data synced successfully!', 'success');
+            
+        } catch (error) {
+            console.error('Sync error:', error);
+            updateSyncStatus('offline', 'Sync failed');
+            showMessage('Sync failed: ' + error.message, 'error');
+        }
+    }
+
+    // Theme functions
+    function setTheme(theme) {
+        const html = document.documentElement;
+        const themeIcon = document.getElementById('theme-icon');
+        
+        if (theme === 'dark') {
+            html.classList.add('dark');
+            html.classList.remove('light');
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
+        } else {
+            html.classList.add('light');
+            html.classList.remove('dark');
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
+        
+        currentTheme = theme;
+        localStorage.setItem('theme', theme);
+        document.getElementById('current-theme').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+        
+        // Update chart themes if they exist
+        updateChartThemes();
+    }
+    
+    function toggleTheme() {
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+        document.getElementById('theme-switch').checked = newTheme === 'dark';
+    }
+    
+    function updateChartThemes() {
+        // Update chart colors if charts are initialized
+        if (window.monthlyChartInstance) {
+            const textColor = currentTheme === 'dark' ? '#e5e7eb' : '#4b5563';
+            
+            window.monthlyChartInstance.options.scales.x.ticks.color = textColor;
+            window.monthlyChartInstance.options.scales.y.ticks.color = textColor;
+            window.monthlyChartInstance.options.plugins.legend.labels.color = textColor;
+            window.monthlyChartInstance.update();
+        }
+        
+        if (window.partyChartInstance) {
+            const textColor = currentTheme === 'dark' ? '#e5e7eb' : '#4b5563';
+            window.partyChartInstance.options.plugins.legend.labels.color = textColor;
+            window.partyChartInstance.update();
+        }
+        
+        if (window.itemsChartInstance) {
+            const textColor = currentTheme === 'dark' ? '#e5e7eb' : '#4b5563';
+            window.itemsChartInstance.options.scales.x.ticks.color = textColor;
+            window.itemsChartInstance.options.scales.y.ticks.color = textColor;
+            window.itemsChartInstance.options.plugins.legend.labels.color = textColor;
+            window.itemsChartInstance.update();
+        }
+    }
+
+    // Tab switching
+    function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Show selected tab content
+        document.getElementById(tabName).classList.add('active');
+        
+        // Add active class to clicked button
+        event.target.classList.add('active');
+        
+        // Update data when switching to certain tabs
+        if (tabName === 'analytics') {
+            updateAnalytics();
+        } else if (tabName === 'view-entries') {
+            loadEntriesTable();
+        } else if (tabName === 'party-wise') {
+            loadPartyWiseOptions();
+        }
+    }
+
+    // Calculate total amount
+    function calculateTotal() {
+        const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+        const rate = parseFloat(document.getElementById('rate').value) || 0;
+        const total = quantity * rate;
+        document.getElementById('total-amount').textContent = `₹${total.toFixed(2)}`;
+    }
+
+    // Add new entry
+    document.getElementById('entry-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const entry = {
+            id: Date.now(),
+            date: document.getElementById('entry-date').value,
+            partyId: document.getElementById('party-select').value,
+            partyName: document.getElementById('party-select').selectedOptions[0].text,
+            itemName: document.getElementById('item-name').value,
+            quantity: parseFloat(document.getElementById('quantity').value),
+            unit: document.getElementById('unit').value,
+            rate: parseFloat(document.getElementById('rate').value) || 0,
+            amount: parseFloat(document.getElementById('quantity').value) * (parseFloat(document.getElementById('rate').value) || 0),
+            notes: document.getElementById('notes').value,
+            timestamp: new Date().toISOString()
+        };
+        
+        entries.push(entry);
+        localStorage.setItem('rawMaterialEntries', JSON.stringify(entries));
+        
+        // Save to Firebase
+        if (firebaseConfigured) {
+            await saveToFirebase('entries', entry);
+        }
+        
+        showMessage('Entry added successfully!', 'success');
+        this.reset();
+        document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('total-amount').textContent = '₹0.00';
+        
+        updateDashboard();
+        updateRecentEntries();
+        updateTodayStats();
+    });
+
+    // Add new party
+    document.getElementById('party-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const party = {
+            id: Date.now(),
+            name: document.getElementById('party-name').value,
+            contact: document.getElementById('party-contact').value,
+            email: document.getElementById('party-email').value,
+            address: document.getElementById('party-address').value,
+            createdAt: new Date().toISOString()
+        };
+        
+        parties.push(party);
+        localStorage.setItem('rawMaterialParties', JSON.stringify(parties));
+        
+        // Save to Firebase
+        if (firebaseConfigured) {
+            await saveToFirebase('parties', party);
+        }
+        
+        showMessage('Party added successfully!', 'success');
+        this.reset();
+        
+        loadParties();
+        updateDashboard();
+    });
+
+    // Load parties into select dropdowns
+    function loadParties() {
+        const selects = ['party-select', 'entries-filter', 'analytics-party', 'party-wise-select'];
+        
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+            
+            // Clear existing options (except first one)
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            parties.forEach(party => {
+                const option = document.createElement('option');
+                option.value = party.id;
+                option.textContent = party.name;
+                select.appendChild(option);
+            });
+            
+            // Restore previous selection if it still exists
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        });
+        
+        displayPartiesList();
+    }
+
+    // Display parties list
+    function displayPartiesList() {
+        const container = document.getElementById('parties-list');
+        container.innerHTML = '';
+        
+        if (parties.length === 0) {
+            container.innerHTML = '<p class="text-tertiary text-center py-4">No parties added yet</p>';
+            return;
+        }
+        
+        parties.forEach(party => {
+            const partyCard = document.createElement('div');
+            partyCard.className = 'border border-color rounded-lg p-4 hover:shadow-md transition-shadow';
+            partyCard.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-semibold text-primary">${party.name}</h4>
+                        <p class="text-sm text-secondary">${party.contact || 'No contact'}</p>
+                        <p class="text-sm text-secondary">${party.email || 'No email'}</p>
+                    </div>
+                    <button onclick="deleteParty(${party.id})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(partyCard);
+        });
+    }
+
+    // Filter parties
+    function filterParties() {
+        const searchTerm = document.getElementById('party-search').value.toLowerCase();
+        const partyCards = document.querySelectorAll('#parties-list > div');
+        
+        partyCards.forEach(card => {
+            const partyName = card.querySelector('h4').textContent.toLowerCase();
+            if (partyName.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Delete party
+    function deleteParty(partyId) {
+        if (confirm('Are you sure you want to delete this party?')) {
+            parties = parties.filter(party => party.id !== partyId);
+            localStorage.setItem('rawMaterialParties', JSON.stringify(parties));
+            
+            showMessage('Party deleted successfully!', 'success');
+            loadParties();
+            updateDashboard();
+        }
+    }
+
+    // Update dashboard stats
+    function updateDashboard() {
+        document.getElementById('total-parties').textContent = parties.length;
+        
+        const totalValue = entries.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('total-value').textContent = `₹${totalValue.toLocaleString('en-IN')}`;
+    }
+
+    // Update recent entries
+    function updateRecentEntries() {
+        const container = document.getElementById('recent-entries');
+        const recentEntries = entries.slice(-5).reverse();
+        
+        container.innerHTML = '';
+        
+        if (recentEntries.length === 0) {
+            container.innerHTML = '<p class="text-tertiary text-center py-4">No entries yet</p>';
+            return;
+        }
+        
+        recentEntries.forEach(entry => {
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'border-l-4 border-primary-500 pl-4 py-2';
+            entryDiv.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-medium text-primary">${entry.itemName}</p>
+                        <p class="text-sm text-secondary">${entry.partyName}</p>
+                        <p class="text-xs text-tertiary">${new Date(entry.date).toLocaleDateString()}</p>
+                    </div>
+                    <span class="text-green-600 font-semibold">₹${entry.amount.toFixed(2)}</span>
+                </div>
+            `;
+            container.appendChild(entryDiv);
+        });
+    }
+
+    // Update today's stats
+    function updateTodayStats() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayEntries = entries.filter(entry => entry.date === today);
+        
+        document.getElementById('today-entries').textContent = todayEntries.length;
+        
+        const todayValue = todayEntries.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('today-value').textContent = `₹${todayValue.toFixed(2)}`;
+    }
+
+    // Load entries table
+    function loadEntriesTable() {
+        const tbody = document.getElementById('entries-table');
+        const startIndex = (currentPage - 1) * entriesPerPage;
+        const endIndex = startIndex + entriesPerPage;
+        const paginatedEntries = entries.slice(startIndex, endIndex);
+        
+        tbody.innerHTML = '';
+        
+        if (paginatedEntries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-tertiary">No entries found</td></tr>';
+            return;
+        }
+        
+        paginatedEntries.forEach(entry => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-tertiary';
+            row.innerHTML = `
+                <td class="px-4 py-3">${new Date(entry.date).toLocaleDateString()}</td>
+                <td class="px-4 py-3">${entry.partyName}</td>
+                <td class="px-4 py-3">${entry.itemName}</td>
+                <td class="px-4 py-3">${entry.quantity} ${entry.unit}</td>
+                <td class="px-4 py-3">₹${entry.rate.toFixed(2)}</td>
+                <td class="px-4 py-3 font-semibold text-green-600">₹${entry.amount.toFixed(2)}</td>
+                <td class="px-4 py-3">
+                    <button onclick="editEntry(${entry.id})" class="text-primary-600 hover:text-primary-800 mr-2">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteEntry(${entry.id})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        updatePagination();
+    }
+
+    // Update pagination
+    function updatePagination() {
+        const totalPages = Math.ceil(entries.length / entriesPerPage);
+        const container = document.getElementById('entries-pagination');
+        
+        container.innerHTML = '';
+        
+        if (totalPages <= 1) return;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            const button = document.createElement('button');
+            button.className = `px-3 py-2 mx-1 rounded ${i === currentPage ? 'bg-primary-600 text-white' : 'bg-tertiary text-secondary hover:bg-primary-200'}`;
+            button.textContent = i;
+            button.onclick = () => {
+                currentPage = i;
+                loadEntriesTable();
+            };
+            container.appendChild(button);
+        }
+    }
+
+    // Filter entries
+    function filterEntries() {
+        const searchTerm = document.getElementById('entries-search').value.toLowerCase();
+        const partyFilter = document.getElementById('entries-filter').value;
+        
+        let filteredEntries = entries;
+        
+        if (searchTerm) {
+            filteredEntries = filteredEntries.filter(entry => 
+                entry.itemName.toLowerCase().includes(searchTerm) ||
+                entry.partyName.toLowerCase().includes(searchTerm) ||
+                entry.notes.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        if (partyFilter) {
+            filteredEntries = filteredEntries.filter(entry => entry.partyId == partyFilter);
+        }
+        
+        // Temporarily replace entries for display
+        const originalEntries = entries;
+        entries = filteredEntries;
+        currentPage = 1;
+        loadEntriesTable();
+        entries = originalEntries;
+    }
+
+    // Delete entry
+    function deleteEntry(entryId) {
+        if (confirm('Are you sure you want to delete this entry?')) {
+            entries = entries.filter(entry => entry.id !== entryId);
+            localStorage.setItem('rawMaterialEntries', JSON.stringify(entries));
+            
+            showMessage('Entry deleted successfully!', 'success');
+            loadEntriesTable();
+            updateDashboard();
+            updateRecentEntries();
+            updateTodayStats();
+        }
+    }
+
+    // Update analytics
+    function updateAnalytics() {
+        const fromDate = document.getElementById('analytics-from').value;
+        const toDate = document.getElementById('analytics-to').value;
+        const partyFilter = document.getElementById('analytics-party').value;
+        
+        let filteredEntries = entries;
+        
+        if (fromDate) {
+            filteredEntries = filteredEntries.filter(entry => entry.date >= fromDate);
+        }
+        
+        if (toDate) {
+            filteredEntries = filteredEntries.filter(entry => entry.date <= toDate);
+        }
+        
+        if (partyFilter) {
+            filteredEntries = filteredEntries.filter(entry => entry.partyId == partyFilter);
+        }
+        
+        // Update analytics cards
+        document.getElementById('analytics-total-entries').textContent = filteredEntries.length;
+        
+        const totalValue = filteredEntries.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('analytics-total-value').textContent = `₹${totalValue.toLocaleString('en-IN')}`;
+        
+        const activeParties = new Set(filteredEntries.map(entry => entry.partyId)).size;
+        document.getElementById('analytics-active-parties').textContent = activeParties;
+        
+        const avgValue = filteredEntries.length > 0 ? totalValue / filteredEntries.length : 0;
+        document.getElementById('analytics-avg-value').textContent = `₹${avgValue.toFixed(2)}`;
+        
+        // Update charts
+        updateCharts(filteredEntries);
+    }
+
+    // Update charts
+    function updateCharts(filteredEntries) {
+        const textColor = currentTheme === 'dark' ? '#e5e7eb' : '#4b5563';
+        
+        // Monthly trends chart
+        const monthlyData = {};
+        filteredEntries.forEach(entry => {
+            const month = entry.date.substring(0, 7); // YYYY-MM
+            monthlyData[month] = (monthlyData[month] || 0) + entry.amount;
+        });
+        
+        const monthlyChart = document.getElementById('monthly-chart');
+        if (window.monthlyChartInstance) {
+            window.monthlyChartInstance.destroy();
+        }
+        
+        window.monthlyChartInstance = new Chart(monthlyChart, {
+            type: 'line',
+            data: {
+                labels: Object.keys(monthlyData).sort(),
+                datasets: [{
+                    label: 'Monthly Value (₹)',
+                    data: Object.values(monthlyData),
+                    borderColor: 'rgb(99, 102, 241)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        ticks: {
+                            color: textColor
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString('en-IN');
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Party-wise chart
+        const partyData = {};
+        filteredEntries.forEach(entry => {
+            partyData[entry.partyName] = (partyData[entry.partyName] || 0) + entry.amount;
+        });
+        
+        const partyChart = document.getElementById('party-chart');
+        if (window.partyChartInstance) {
+            window.partyChartInstance.destroy();
+        }
+        
+        window.partyChartInstance = new Chart(partyChart, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(partyData),
+                datasets: [{
+                    data: Object.values(partyData),
+                    backgroundColor: [
+                        '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+                        '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#3B82F6'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Items chart
+        const itemData = {};
+        filteredEntries.forEach(entry => {
+            itemData[entry.itemName] = (itemData[entry.itemName] || 0) + entry.quantity;
+        });
+        
+        // Get top 10 items
+        const sortedItems = Object.entries(itemData)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10);
+        
+        const itemsChart = document.getElementById('items-chart');
+        if (window.itemsChartInstance) {
+            window.itemsChartInstance.destroy();
+        }
+        
+        window.itemsChartInstance = new Chart(itemsChart, {
+            type: 'bar',
+            data: {
+                labels: sortedItems.map(([name]) => name),
+                datasets: [{
+                    label: 'Quantity',
+                    data: sortedItems.map(([, quantity]) => quantity),
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderColor: 'rgb(99, 102, 241)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        ticks: {
+                            color: textColor
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Load party-wise view options
+    function loadPartyWiseOptions() {
+        const select = document.getElementById('party-wise-select');
+        select.innerHTML = '<option value="">Select Party</option>';
+        
+        parties.forEach(party => {
+            const option = document.createElement('option');
+            option.value = party.id;
+            option.textContent = party.name;
+            select.appendChild(option);
+        });
+    }
+
+    // Load party-wise view
+    function loadPartyWiseView() {
+        const partyId = document.getElementById('party-wise-select').value;
+        const content = document.getElementById('party-wise-content');
+        const empty = document.getElementById('party-wise-empty');
+        
+        if (!partyId) {
+            content.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+        
+        const partyEntries = entries.filter(entry => entry.partyId == partyId);
+        const party = parties.find(p => p.id == partyId);
+        
+        // Update stats
+        document.getElementById('party-total-orders').textContent = partyEntries.length;
+        
+        const totalAmount = partyEntries.reduce((sum, entry) => sum + entry.amount, 0);
+        document.getElementById('party-total-amount').textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
+        
+        const lastOrder = partyEntries.length > 0 ? 
+            new Date(Math.max(...partyEntries.map(e => new Date(e.date)))).toLocaleDateString() : 
+            'No orders';
+        document.getElementById('party-last-order').textContent = lastOrder;
+        
+        // Update table
+        const tbody = document.getElementById('party-wise-table');
+        tbody.innerHTML = '';
+        
+        if (partyEntries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-tertiary">No entries found for this party</td></tr>';
+        } else {
+            partyEntries.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(entry => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-tertiary';
+                row.innerHTML = `
+                    <td class="px-4 py-3">${new Date(entry.date).toLocaleDateString()}</td>
+                    <td class="px-4 py-3">${entry.itemName}</td>
+                    <td class="px-4 py-3">${entry.quantity} ${entry.unit}</td>
+                    <td class="px-4 py-3">₹${entry.rate.toFixed(2)}</td>
+                    <td class="px-4 py-3 font-semibold text-green-600">₹${entry.amount.toFixed(2)}</td>
+                    <td class="px-4 py-3">${entry.notes || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        content.classList.remove('hidden');
+        empty.classList.add('hidden');
+    }
+
+    // Update system info
+    function updateSystemInfo() {
+        document.getElementById('system-total-entries').textContent = entries.length;
+        document.getElementById('system-total-parties').textContent = parties.length;
+        
+        const lastSync = localStorage.getItem('lastSync');
+        document.getElementById('last-sync').textContent = lastSync ? 
+            new Date(lastSync).toLocaleDateString() : 'Never';
+    }
+
+    // Export all data
+    function exportAllData() {
+        const data = {
+            entries: entries,
+            parties: parties,
+            exportDate: new Date().toISOString(),
+            firebaseConfig: firebaseConfig
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `raw-material-data-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showMessage('Data exported successfully!', 'success');
+    }
+
+    // Import data
+    function importData() {
+        document.getElementById('import-file').click();
+    }
+
+    document.getElementById('import-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                
+                if (data.entries && data.parties) {
+                    entries = data.entries;
+                    parties = data.parties;
+                    
+                    localStorage.setItem('rawMaterialEntries', JSON.stringify(entries));
+                    localStorage.setItem('rawMaterialParties', JSON.stringify(parties));
+                    
+                    loadParties();
+                    updateDashboard();
+                    updateRecentEntries();
+                    updateTodayStats();
+                    loadEntriesTable();
+                    updateSystemInfo();
+                    
+                    showMessage('Data imported successfully!', 'success');
+                } else {
+                    showMessage('Invalid file format', 'error');
+                }
+            } catch (error) {
+                showMessage('Error reading file', 'error');
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    // Clear all data
+    function clearAllData() {
+        if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+            localStorage.removeItem('rawMaterialEntries');
+            localStorage.removeItem('rawMaterialParties');
+            
+            entries = [];
+            parties = [];
+            
+            loadParties();
+            updateDashboard();
+            updateRecentEntries();
+            updateTodayStats();
+            loadEntriesTable();
+            updateSystemInfo();
+            
+            showMessage('All data cleared successfully!', 'success');
+        }
+    }
+
+    // Export filtered data
+    function exportData() {
+        const searchTerm = document.getElementById('entries-search').value.toLowerCase();
+        const partyFilter = document.getElementById('entries-filter').value;
+        
+        let filteredEntries = entries;
+        
+        if (searchTerm) {
+            filteredEntries = filteredEntries.filter(entry => 
+                entry.itemName.toLowerCase().includes(searchTerm) ||
+                entry.partyName.toLowerCase().includes(searchTerm) ||
+                entry.notes.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        if (partyFilter) {
+            filteredEntries = filteredEntries.filter(entry => entry.partyId == partyFilter);
+        }
+        
+        const csvContent = [
+            ['Date', 'Party', 'Item', 'Quantity', 'Unit', 'Rate', 'Amount', 'Notes'],
+            ...filteredEntries.map(entry => [
+                entry.date,
+                entry.partyName,
+                entry.itemName,
+                entry.quantity,
+                entry.unit,
+                entry.rate,
+                entry.amount,
+                entry.notes
+            ])
+        ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `raw-material-entries-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showMessage('Data exported successfully!', 'success');
+    }
+
+    // Show message
+    function showMessage(message, type) {
+        const container = document.getElementById('message-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `p-4 rounded-lg shadow-lg mb-4 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+        messageDiv.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(messageDiv);
+        
+        setTimeout(() => {
+            if (messageDiv.parentElement) {
+                messageDiv.remove();
+            }
+        }, 5000);
+    }
+</script>
+</body>
+</html>
